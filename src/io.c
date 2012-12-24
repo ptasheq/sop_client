@@ -1,4 +1,4 @@
-#include "libs.h"
+#include "io.h"
 
 short readstr(char * str, int n) {
 	if (mvwgetnstr(stdscr, rows-1, 0, str, n) == OK) {

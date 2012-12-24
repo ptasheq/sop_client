@@ -1,8 +1,7 @@
-#include "libs.h"
-
 #ifndef GUI_H
-
 #define GUI_H	
+
+#include "libs.h"
 
 const int DRAW_BORDER = 1;
 const int DRAW_NO_BORDER = 0;

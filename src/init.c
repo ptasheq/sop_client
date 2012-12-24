@@ -1,4 +1,4 @@
-#include "libs.h"
+#include "init.h"
 
 void init() {
 	gfx_init();

@@ -7,6 +7,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
 
 #define STR_BUF_SIZE 256
 #define CHATBOX_BOTTOM_SPAN 4
