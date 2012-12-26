@@ -19,3 +19,36 @@ void writestr(char * str) {
 		wrefresh(chatbox);
 	}
 }
+
+void readint(int * n) {
+	char buf[INT_AS_STR_LENGTH];
+	int i = 0, len;
+	*n = 0;
+	if (readstr(buf, INT_AS_STR_LENGTH)) {
+		writestr(buf);
+		len = strlen(buf);	
+		while (buf[i] && i < INT_AS_STR_LENGTH) {
+			if ((buf[i] - ASCII_TO_INT) >= 0 && (buf[i] - ASCII_TO_INT <= 9)) {
+				*n += power(10, --len) * (buf[i++] - ASCII_TO_INT);
+			}
+			else {
+				*n = -1;
+				break;
+			}
+		}
+	}
+	else {
+		*n = -1;
+	}
+}
+
+int power(int base, int exp) {
+	int i, res = base;
+	if (!exp) {
+		return 1;
+	}
+	for (i = 0; i < exp-1; ++i) {
+		res *= base;
+	}
+	return res;
+}
