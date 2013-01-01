@@ -1,16 +1,14 @@
 CC = gcc
 LD = gcc
 
-CFLAGS = -Wall -lncursesw -I include/ 
-LDFLAGS = -Wall -lncursesw -I include/
+CFLAGS = -ansi -Wall -lncursesw -I include/ 
+LDFLAGS = -ansi -Wall -lncursesw -I include/
 
-SRCS = main.c gui.c init.c io.c login.c loop.c
+SRCS = main.c gui.c init.c io.c login.c loop.c protocol.c
 OBJECTS = $(SRCS:.c=.o)
-#HEADERS = gui.h libs.h login.h protocol.h
 EXEC = client
 
 OBJS = $(addprefix ./obj/, $(OBJECTS))
-#HDRS = $(addprefix ./include/, $(HEADERS))
 
 $(EXEC): $(OBJS)
 	$(LD) $(OBJS) -o $@ $(LDFLAGS)

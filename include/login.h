@@ -6,7 +6,7 @@
 
 extern Msg_login login_data;
 
-void login(); // connects with server, gets username
-void logout(); // disconnects from server
+void login(); /* connects with server, gets username */
+void logout(); /* disconnects from server */
 
 #endif

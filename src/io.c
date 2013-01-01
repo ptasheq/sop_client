@@ -5,7 +5,7 @@ short readstr(char * str, int n) {
 		clrtoeol();
 		return 1;
 	}
-	return 0;
+	return FAIL;
 }
 
 void writestr(char * str) {
@@ -24,7 +24,7 @@ void readint(int * n) {
 	char buf[INT_AS_STR_LENGTH];
 	int i = 0, len;
 	*n = 0;
-	if (readstr(buf, INT_AS_STR_LENGTH)) {
+	if (readstr(buf, INT_AS_STR_LENGTH) && !wants_exit(buf)) {
 		writestr(buf);
 		len = strlen(buf);	
 		while (buf[i] && i < INT_AS_STR_LENGTH) {
@@ -37,8 +37,11 @@ void readint(int * n) {
 			}
 		}
 	}
+	else if (wants_exit(buf)) {
+		end();
+	}
 	else {
-		*n = -1;
+		*n = FAIL;
 	}
 }
 
