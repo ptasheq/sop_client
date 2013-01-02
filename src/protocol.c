@@ -34,7 +34,7 @@ int send_message(int msgtype, ...) {
 		}
 	}
 	va_end(vl);
-	return (i<MAX_FAILS) ? 1 : FAIL;
+	return (i<MAX_FAILS) ? 0 : FAIL;
 }
 
 int receive_message(int msgtype, ...) {
@@ -70,5 +70,5 @@ int receive_message(int msgtype, ...) {
         }
     }
 	va_end(vl);
-	return (i<MAX_FAILS) ? 1 : FAIL;
+	return (i<MAX_FAILS) ? 0 : FAIL;
 }

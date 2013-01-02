@@ -4,7 +4,7 @@ LD = gcc
 CFLAGS = -ansi -Wall -lncursesw -I include/ 
 LDFLAGS = -ansi -Wall -lncursesw -I include/
 
-SRCS = main.c gui.c init.c io.c login.c loop.c protocol.c
+SRCS = main.c gui.c init.c io.c login.c loop.c protocol.c structmem.c
 OBJECTS = $(SRCS:.c=.o)
 EXEC = client
 

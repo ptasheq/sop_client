@@ -7,6 +7,10 @@
 #define ASCII_TO_INT 48
 
 #define wants_exit(str) strcmp(str, "[exit]") == 0 ? 1 : 0
+#define wants_send_chat_message(str) str[0] == '[' ? 0 : 1
+#define wants_login(str) strcmp(str, "[login]") == 0 ? 1 : 0
+#define wants_logout(str) strcmp(str, "[logout]") == 0 ? 1 : 0
+#define wants_help(str) strcmp(str, "[help]") == 0 ? 1 : 0
 
 short readstr(char *, int);
 void writestr(char *);

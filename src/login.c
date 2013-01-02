@@ -3,13 +3,13 @@
 
 Msg_login login_data;
 Msg_response response_data;
-key_t serv_num, own_num;
-int serv_id, own_id; 
+key_t serv_num;
+int serv_id, own_id;
+short logged = 0;
 
 void login() {
-	int logged = 0, login_fails;
+	key_t own_num;
 	while (!logged) {
-		login_fails = 0;
 		writestr("Please insert server address(queue number):");
 		readint(&serv_num);
 		while ((serv_id = msgget(serv_num, 0666)) == FAIL || serv_num == FAIL) {
@@ -44,13 +44,10 @@ void login() {
 		else if (wants_exit(login_data.username)) {
 			end();
 		}
-		if (login_fails == MAX_FAILS) {
-			writestr("Login failed");
-		}
 
 	}
 }
 
 void logout() {
-		
+	logged = 0;	
 }

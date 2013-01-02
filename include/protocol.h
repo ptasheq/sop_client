@@ -3,7 +3,6 @@
 
 #include "libs.h"
 
-#define USER_NAME_MAX_LENGTH 10
 #define RESPONSE_LENGTH 50
 #define MAX_SERVERS_NUMBER 15
 #define MAX_USERS_NUMBER 20
@@ -59,6 +58,7 @@ typedef struct {
 	char send_time[6];
 	char sender[USER_NAME_MAX_LENGTH];
 	char receiver[USER_NAME_MAX_LENGTH];
+	char message [STR_BUF_SIZE];
 } Msg_chat_message;
 
 enum ROOM_OPERATION_TYPE {ENTER_ROOM=1, LEAVE_ROOM, CHANGE_ROOM};
@@ -70,12 +70,17 @@ typedef struct {
 	char room_name [ROOM_NAME_MAX_LENGTH];
 } Msg_room;
 
-typedef struct{
+typedef struct {
     long type;
     int server_ipc_num;
 }Msg_server2server;
 
 extern int serv_id, own_id;
+extern key_t serv_num;
+
+extern Msg_login login_data;
+extern Msg_response response_data;
+extern Msg_chat_message * chatmsg_data;
 
 int send_message(int, ...);
 int receive_message(int, ...);
