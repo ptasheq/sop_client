@@ -26,7 +26,7 @@ void join(char * str) {
 			writestr("Server didn't answer.");	
 		}
 	}
-	else if (is_inroom() && !is_logged()) {
+	else if (is_inroom() && is_logged()) {
 		if (!strcmp(str, roomname)) { /* User didn't choose the same room to log in again */
 			room_data.operation_type = CHANGE_ROOM;
 			strcpy(room_data.user_name, username);
@@ -83,7 +83,7 @@ void send_chatmsg(char * str) {
 			strcpy(chatmsg_data->message, str);
 			if (send_message(chatmsg_data->type, chatmsg_data) != FAIL && receive_message(RESPONSE, &response_data) != FAIL) {
 				if (response_data.response_type == MSG_SEND) {
-					writestr("message send successfully.");
+					writestr("message sent successfully.");
 				}
 				else {
 					writestr("message wasn't sent.");
@@ -112,9 +112,14 @@ void send_priv(char * str) {
             	    get_time(chatmsg_data->send_time);
 	                chatmsg_data->type = MESSAGE;
 					chatmsg_data->msg_type = PRIVATE;
-   		            writestr(chatmsg_data->receiver);
-                	writestr(chatmsg_data->send_time);
-                	writestr(chatmsg_data->message);
+					if (send_message(chatmsg_data->type, chatmsg_data) != FAIL && receive_message(RESPONSE, &response_data) != FAIL) {
+						if (response_data.response_type == MSG_SEND) {
+							writestr("message sent successfully.");
+						}
+						else {
+							writestr("message wasn't sent");
+						}
+					}
            		}
            		else {
                 	writestr("No use in sending empty message.");
