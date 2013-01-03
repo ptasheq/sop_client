@@ -30,15 +30,15 @@ void join(char * str) {
 		if (!strcmp(str, roomname)) { /* User didn't choose the same room to log in again */
 			room_data.operation_type = CHANGE_ROOM;
 			strcpy(room_data.user_name, username);
-		    strcpy(room_data.room_name, str);
+		    	strcpy(room_data.room_name, str);
 			if (send_message(room_data.type, &room_data) != FAIL && receive_message(RESPONSE, &response_data) != FAIL) {
-            	if (response_data.response_type == CHANGE_ROOM_SUCCESS) {
+            			if (response_data.response_type == CHANGE_ROOM_SUCCESS) {
 					strcpy(roomname, room_data.room_name);
-            	}
-            	else {
-                	writestr("Couldn't change room.");
-            	}
-        	}
+            			}
+            			else {
+                			writestr("Couldn't change room.");
+            			}
+        		}
 			else {
 				writestr("Server didn't answer");
 			}
@@ -59,9 +59,9 @@ void leave() {
 		strcpy(room_data.room_name, roomname);
 		if (send_message(room_data.type, &room_data) != FAIL && receive_message(RESPONSE, &response_data) != FAIL) {
 			inroom = 0;
-            if (response_data.response_type == LEAVE_ROOM_SUCCESS) {
+            		if (response_data.response_type == LEAVE_ROOM_SUCCESS) {
 				writestr(response_data.content);
-            }
+            		}
 			else {
 				writestr("Some error occurred.");
 			}
@@ -104,13 +104,13 @@ void send_priv(char * str) {
 	if (is_logged()) {
 		int username_length;	
 		if ((username_length = get_username(str)) != FAIL) {
-   	     	if (allocate_mem(&chatmsg_data)) {
-   	        	strcpy(chatmsg_data->receiver, str);
+   	     		if (allocate_mem(&chatmsg_data)) {
+   	        		strcpy(chatmsg_data->receiver, str);
 				strcpy(chatmsg_data->sender, username);
-    	        strcpy(chatmsg_data->message, &str[username_length+1]);
-        	    if (chatmsg_data->message[0]) {
-            	    get_time(chatmsg_data->send_time);
-	                chatmsg_data->type = MESSAGE;
+    	       	 		strcpy(chatmsg_data->message, &str[username_length+1]);
+        	    		if (chatmsg_data->message[0]) {
+            	    			get_time(chatmsg_data->send_time);
+	               	 		chatmsg_data->type = MESSAGE;
 					chatmsg_data->msg_type = PRIVATE;
 					if (send_message(chatmsg_data->type, chatmsg_data) != FAIL && receive_message(RESPONSE, &response_data) != FAIL) {
 						if (response_data.response_type == MSG_SEND) {
@@ -120,19 +120,19 @@ void send_priv(char * str) {
 							writestr("message wasn't sent");
 						}
 					}
-           		}
-           		else {
-                	writestr("No use in sending empty message.");
-           		}
-           		free_mem(chatmsg_data);
-        	}
-        	else {
-            	writestr("Couldn't allocate chatmsg_data structure.");
-        	}
-    	}
-    	else {
-        	writestr("This priv doesn't make sense.");
-    	}
+           			}
+           			else {
+                			writestr("No use in sending empty message.");
+           			}
+           			free_mem(chatmsg_data);
+        		}
+        		else {
+            			writestr("Couldn't allocate chatmsg_data structure.");
+        		}
+    		}
+    		else {
+        		writestr("This priv doesn't make sense.");
+    		}
 	}
 	else {
 		writestr("To perform it, you have to be logged in.");
