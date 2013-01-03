@@ -1,7 +1,7 @@
 #include "io.h"
 
-short readstr(char * str, int n) {
-	if (mvwgetnstr(stdscr, rows-1, 0, str, n) == OK) {
+short readstr(char * str, int n) { /* Reads always one character less, so prevents overflow */
+	if (mvwgetnstr(stdscr, rows-1, 0, str, n-1) == OK) {
 		clrtoeol();
 		return 1;
 	}

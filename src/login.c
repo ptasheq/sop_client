@@ -6,6 +6,7 @@ Msg_response response_data;
 key_t serv_num;
 int serv_id, own_id;
 short logged = 0;
+char username[USER_NAME_MAX_LENGTH];
 
 void login() {
 	key_t own_num;
@@ -23,7 +24,7 @@ void login() {
 			readint(&own_num);
 		}
 		writestr("Please enter your nickname:");
-		if (readstr(login_data.username, USER_NAME_MAX_LENGTH-1) != FAIL && !wants_exit(login_data.username)) {
+		if (readstr(login_data.username, USER_NAME_MAX_LENGTH) != FAIL && !wants_exit(login_data.username)) {
 			login_data.ipc_num = own_num;
 			login_data.type = LOGIN;
 			if (send_message(login_data.type, &login_data) != FAIL) {
@@ -31,6 +32,7 @@ void login() {
 					response_data.response_type == LOGIN_SUCCESS) {
 					writestr(response_data.content);
 					logged = 1;
+					strcpy(username, login_data.username);
 				}
 				else if (response_data.response_type == LOGIN_FAILED) {
 					writestr("Server rejected connection");
@@ -49,5 +51,22 @@ void login() {
 }
 
 void logout() {
-	logged = 0;	
+	if (is_logged()) {
+		logged = 0;
+		login_data.type = LOGOUT;
+		strcpy(login_data.username, username);
+		if (send_message(login_data.type, &login_data) != FAIL && receive_message(RESPONSE, &response_data) != FAIL) {
+			if (response_data.response_type == LOGOUT_SUCCESS) {
+				writestr("Successfully logout.");
+			}
+			else {
+				writestr("Must have lost connection before logout.");
+			}
+		}
+		else {
+			writestr("Couldn't contact server, so assuming logout");
+		}
+	}
 }
+
+

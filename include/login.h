@@ -7,6 +7,7 @@
 #define is_logged() logged
 
 extern short logged;
+extern char username[USER_NAME_MAX_LENGTH];
 
 void login(); /* connects with server, gets username */
 void logout(); /* disconnects from server */
