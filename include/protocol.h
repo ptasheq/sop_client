@@ -7,6 +7,9 @@
 #define MAX_SERVERS_NUMBER 15
 #define MAX_USERS_NUMBER 20
 #define ROOM_NAME_MAX_LENGTH 10
+#define MSG_TYPES_NUMBER 10
+#define AWAIT 1
+#define NOAWAIT 0
 
 typedef struct {
 	char user_name[USER_NAME_MAX_LENGTH];
@@ -45,10 +48,10 @@ typedef struct{
     char user_name[USER_NAME_MAX_LENGTH];
 }Msg_request;
 
-typedef struct{
+typedef struct {
     long type;
-    char users[MAX_SERVERS_NUMBER * MAX_USERS_NUMBER][USER_NAME_MAX_LENGTH];
-}Msg_users_list;
+    char content[MAX_SERVERS_NUMBER * MAX_USERS_NUMBER][USER_NAME_MAX_LENGTH];
+}Msg_users_list, Msg_room_users_list, Msg_rooms_list, Msg_request_response;
 
 enum CHAT_MESSAGE_TYPE {PUBLIC, PRIVATE};
 
@@ -75,14 +78,11 @@ typedef struct {
     int server_ipc_num;
 }Msg_server2server;
 
+extern int Pdesc[2], Pdesc2[2];
+
 extern int serv_id, own_id;
-extern key_t serv_num;
-extern char username[USER_NAME_MAX_LENGTH];
 
-extern Msg_login login_data;
-extern Msg_response response_data;
-
-int send_message(int, ...);
-int receive_message(int, ...);
+int send_message(const int, ...);
+int receive_message(const int, ...);
 
 #endif

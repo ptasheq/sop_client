@@ -6,6 +6,9 @@
 
 #define is_logged() logged
 
+extern Msg_login * login_data;
+extern Msg_response response_data;
+
 extern short logged;
 extern char username[USER_NAME_MAX_LENGTH];
 

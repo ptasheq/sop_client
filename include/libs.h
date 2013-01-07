@@ -2,7 +2,8 @@
 
 #define LIBS_H
 
-#include <ncurses.h>
+#define _XOPEN_SOURCE_EXTENDED
+#include <ncursesw/ncurses.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>

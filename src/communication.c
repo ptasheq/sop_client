@@ -2,45 +2,59 @@
 #include "login.h"
 #include <time.h>
 #include "structmem.h"
+#include "io.h"
 
-Msg_room room_data = {ROOM, 0, "", ""};
-int inroom = 0;
+Msg_room * room_data = NULL;
+Msg_request_response * request_response_data = NULL;
+Msg_request * request_data = NULL;
+Msg_chat_message chatmsg_data;
 char roomname[ROOM_NAME_MAX_LENGTH];
-Msg_chat_message * chatmsg_data = NULL;
+int inroom = 0;
 
 void join(char * str) {
 	if (!is_inroom() && is_logged()) {
-		room_data.operation_type = ENTER_ROOM;
-		strcpy(room_data.user_name, username);
-		strcpy(room_data.room_name, str);
-		if (send_message(room_data.type, &room_data) != FAIL && receive_message(RESPONSE, &response_data) != FAIL) {
-			if (response_data.response_type == ENTERED_ROOM_SUCCESS) {
-				inroom = 1;
-				strcpy(roomname, room_data.room_name);
+		if (allocate_mem(ROOM, &room_data)) {
+			room_data->type = ROOM;
+			room_data->operation_type = ENTER_ROOM;
+			strcpy(room_data->user_name, username);
+			strcpy(room_data->room_name, str);
+			if (send_message(room_data->type, room_data) != FAIL && wait_until_received(room_data->type) != FAIL) {
+				if (response_data.response_type == ENTERED_ROOM_SUCCESS) {
+					inroom = 1;
+					strcpy(roomname, room_data->room_name);
+				}
+				else {
+					writestr("Couldn't enter room.");
+				}
 			}
 			else {
-				writestr("Couldn't enter room.");
+				writestr("Server didn't answer.");	
 			}
-		}
-		else {
-			writestr("Server didn't answer.");	
+			free_mem(room_data);
 		}
 	}
 	else if (is_inroom() && is_logged()) {
 		if (!strcmp(str, roomname)) { /* User didn't choose the same room to log in again */
-			room_data.operation_type = CHANGE_ROOM;
-			strcpy(room_data.user_name, username);
-		    	strcpy(room_data.room_name, str);
-			if (send_message(room_data.type, &room_data) != FAIL && receive_message(RESPONSE, &response_data) != FAIL) {
-            			if (response_data.response_type == CHANGE_ROOM_SUCCESS) {
-					strcpy(roomname, room_data.room_name);
-            			}
-            			else {
-                			writestr("Couldn't change room.");
-            			}
+			if (allocate_mem(ROOM, &room_data)) {
+				room_data->type = ROOM;
+				room_data->operation_type = CHANGE_ROOM;
+				strcpy(room_data->user_name, username);
+		   		strcpy(room_data->room_name, str);
+				if (send_message(room_data->type, room_data) != FAIL && wait_until_received(room_data->type) != FAIL) {
+           			if (response_data.response_type == CHANGE_ROOM_SUCCESS) {
+						strcpy(roomname, room_data->room_name);
+            		}
+            		else {
+                		writestr("Couldn't change room.");
+            		}
         		}
+				else {
+					writestr("Server didn't answer");
+				}
+				free_mem(room_data);
+			}
 			else {
-				writestr("Server didn't answer");
+				writestr("Couldn't allocate room_data structure.");
 			}
 		}
 		else {
@@ -54,18 +68,24 @@ void join(char * str) {
 
 void leave() {
 	if (is_inroom()) {
-		room_data.operation_type = LEAVE_ROOM;
-		strcpy(room_data.user_name, username);
-		strcpy(room_data.room_name, roomname);
-		if (send_message(room_data.type, &room_data) != FAIL && receive_message(RESPONSE, &response_data) != FAIL) {
-			inroom = 0;
-            		if (response_data.response_type == LEAVE_ROOM_SUCCESS) {
-				writestr(response_data.content);
-            		}
-			else {
-				writestr("Some error occurred.");
+		if (allocate_mem(ROOM, &room_data)) {
+			room_data->operation_type = LEAVE_ROOM;
+			strcpy(room_data->user_name, username);
+			strcpy(room_data->room_name, roomname);
+			if (send_message(room_data->type, room_data) != FAIL && wait_until_received(room_data->type) != FAIL) {
+				inroom = 0;
+           		if (response_data.response_type == LEAVE_ROOM_SUCCESS) {
+					writestr(response_data.content);
+           		}
+				else {
+					writestr("Some error occurred.");
+				}
 			}
-		}	
+			free_mem(room_data);
+		}
+		else {
+			writestr("Couldn't allocate room_data structure.");
+		}
 	}
 	else {
 		writestr("To perform it, you have to be in room.");
@@ -74,25 +94,18 @@ void leave() {
 
 void send_chatmsg(char * str) {
 	if (is_inroom() && is_logged()) {
-		if (allocate_mem(&chatmsg_data)) {
-			chatmsg_data->type = MESSAGE;
-			chatmsg_data->msg_type = PUBLIC;
-			get_time(chatmsg_data->send_time);
-			strcpy(chatmsg_data->sender, username);
-			strcpy(chatmsg_data->receiver, roomname);
-			strcpy(chatmsg_data->message, str);
-			if (send_message(chatmsg_data->type, chatmsg_data) != FAIL && receive_message(RESPONSE, &response_data) != FAIL) {
-				if (response_data.response_type == MSG_SEND) {
-					writestr("message sent successfully.");
-				}
-				else {
-					writestr("message wasn't sent.");
-				}
+		chatmsg_data.msg_type = PUBLIC;
+		get_time(chatmsg_data.send_time);
+		strcpy(chatmsg_data.sender, username);
+		strcpy(chatmsg_data.receiver, roomname);
+		strcpy(chatmsg_data.message, str);
+		if (send_message(chatmsg_data.type, chatmsg_data) != FAIL && wait_until_received(chatmsg_data.type) != FAIL) {
+			if (response_data.response_type == MSG_SEND) {
+				writestr("message sent successfully.");
 			}
-
-		}
-		else {
-			writestr("Couldn't allocate chatmsg_data structure.");
+			else {
+				writestr("message wasn't sent.");
+			}
 		}
 	}
 	else {
@@ -104,38 +117,60 @@ void send_priv(char * str) {
 	if (is_logged()) {
 		int username_length;	
 		if ((username_length = get_username(str)) != FAIL) {
-   	     		if (allocate_mem(&chatmsg_data)) {
-   	        		strcpy(chatmsg_data->receiver, str);
-				strcpy(chatmsg_data->sender, username);
-    	       	 		strcpy(chatmsg_data->message, &str[username_length+1]);
-        	    		if (chatmsg_data->message[0]) {
-            	    			get_time(chatmsg_data->send_time);
-	               	 		chatmsg_data->type = MESSAGE;
-					chatmsg_data->msg_type = PRIVATE;
-					if (send_message(chatmsg_data->type, chatmsg_data) != FAIL && receive_message(RESPONSE, &response_data) != FAIL) {
-						if (response_data.response_type == MSG_SEND) {
-							writestr("message sent successfully.");
-						}
-						else {
-							writestr("message wasn't sent");
-						}
+   	       	strcpy(chatmsg_data.receiver, str);
+			strcpy(chatmsg_data.sender, username);
+			strcpy(chatmsg_data.message, &str[username_length+1]);
+           	if (chatmsg_data.message[0]) {
+           		get_time(chatmsg_data.send_time);
+				chatmsg_data.msg_type = PRIVATE;
+				if (send_message(chatmsg_data.type, &chatmsg_data) != FAIL && wait_until_received(chatmsg_data.type) != FAIL) {
+					if (response_data.response_type == MSG_SEND) {
+						writestr("message sent successfully.");
 					}
-           			}
-           			else {
-                			writestr("No use in sending empty message.");
-           			}
-           			free_mem(chatmsg_data);
-        		}
-        		else {
-            			writestr("Couldn't allocate chatmsg_data structure.");
-        		}
-    		}
-    		else {
-        		writestr("This priv doesn't make sense.");
-    		}
+					else {
+						writestr("message wasn't sent");
+					}
+				}
+           	}
+           	else {
+          		writestr("No use in sending empty message.");
+        	}
+        }
+    	else {
+       		writestr("This priv doesn't make sense.");
+    	}
 	}
 	else {
-		writestr("To perform it, you have to be logged in.");
+		writestr("To perform this, you have to be logged in.");
+	}
+}
+
+void request(const int rtype) {
+	if (is_logged() && rtype >= USERS_LIST && rtype <= ROOM_USERS_LIST ) {
+		if (allocate_mem(REQUEST, &request_data)) {
+			request_data->type = REQUEST;
+			request_data->request_type = rtype;
+			strcpy(request_data->user_name, username);
+			if (send_message(request_data->type, request_data) != FAIL)  {
+				int mtype = (rtype == USERS_LIST) ? USERS : (rtype == ROOMS_LIST) ? ROOMS : ROOM_USERS;
+				if (allocate_mem(mtype, &request_response_data)) {
+					if (wait_until_received(mtype) != FAIL) {
+						display_request_result();	
+					}
+					free_mem(request_response_data);
+				}
+				else {
+					writestr("Couldn't allocate data structure.");
+				}
+			}
+			free_mem(request_data);
+		}
+		else {
+			writestr("Couldn't allocate request_data structure.");
+		}
+	}
+	else {
+		writestr("To perform this, you have to be logged in.");
 	}
 }
 
@@ -181,3 +216,55 @@ void get_time(char * str) { /* all numbers are set because of result of ctime (c
     strcpy(str, "00:00");
 }
 
+void display_request_result() { 
+	int i = 0;
+	while (i < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER && request_response_data->content[i][0]) {
+		writestr(request_response_data->content[i]);
+		++i;
+	}
+}
+
+int wait_until_received(const int mtype) {
+    if (mtype > 0 && mtype <= MSG_TYPES_NUMBER) {
+        int i = 0, n;
+        char received;
+		write(Pdesc2[1], &mtype, 4);
+		msleep(10);
+        while (read(Pdesc[0], &received, 1) == FAIL && i < MAX_FAILS) {
+            ++i;
+            msleep(10);
+        }
+        if (i == MAX_FAILS || !received)
+            return FAIL;
+		i = 0;
+        if (mtype == RESPONSE) {
+			while (read(Pdesc[0], &response_data.response_type, sizeof(int)) == FAIL && i < MAX_FAILS) {
+				++i;
+				msleep(10);
+			} 
+			while (read(Pdesc[0], response_data.content, RESPONSE_LENGTH) == FAIL && i < MAX_FAILS) {
+				++i;
+				msleep(10);
+			}
+			if (i == MAX_FAILS)
+				return FAIL;
+        }
+		else if (mtype == USERS || mtype == ROOMS || mtype == ROOM_USERS_LIST) {
+			int j = 0;
+			while (read(Pdesc[0], request_response_data->content[j], USER_NAME_MAX_LENGTH) == FAIL) {
+				++i;
+				msleep(10);
+			}
+			if (i == MAX_FAILS)
+				return FAIL;
+			++j;
+			while (read(Pdesc[0], request_response_data->content[j], USER_NAME_MAX_LENGTH) > 0 &&
+				j < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER && request_response_data->content[j][0]) {
+				++j;
+			}
+		}
+        if (i != MAX_FAILS)
+            return 1;
+    }
+    return FAIL;
+}

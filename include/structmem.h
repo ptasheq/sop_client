@@ -6,6 +6,6 @@
 
 #define free_mem(ptr) {free(ptr); ptr = NULL;}
 
-Msg_chat_message * allocate_mem(Msg_chat_message **);
+void * allocate_mem(const int, ...);
 
 #endif

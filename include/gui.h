@@ -11,5 +11,5 @@ void destroy_win(WINDOW *); /* erases window from screen and memory */
 void init_colors(); /* enables the color module */
 void gfx_init(); /* graphics initialization */
 void gfx_free(); /* graphics uninitalization */
-
+void on_resize(); /* redraws window, when terminal is resized */
 #endif

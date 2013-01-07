@@ -1,7 +1,7 @@
 #include "protocol.h"
 #include <stdarg.h>
 
-int send_message(int msgtype, ...) {
+int send_message(const int msgtype, ...) {
 	short i = 0;
 	va_list vl;
 	va_start(vl, msgtype);
@@ -46,7 +46,7 @@ int send_message(int msgtype, ...) {
 	return (i<MAX_FAILS) ? 0 : FAIL;
 }
 
-int receive_message(int msgtype, ...) {
+int receive_message(const int msgtype, ...) {
 	short i = 0;
 	va_list vl;
 	va_start(vl, msgtype);
