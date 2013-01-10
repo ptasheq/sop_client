@@ -1,64 +1,33 @@
 #include "io.h"
 
+unsigned short int lnum = 0;
+char ** lines = NULL; 
 
 short readstr(char * str, int n) { /* Reads always one character less, so prevents overflow */
-	wint_t ch;
-	int i = 1, j = rows-1, k=0;
-	cchar_t wbuf = {0};
-	int wch[2];
-	while (mvwget_wch(stdscr, rows-1, i, &ch) != FAIL) {
-		if (k < STR_BUF_SIZE-1) {
-			if ((ch > 31 && ch < 127)) {
-				addch((char)ch);
-				str[k] = (char) ch;
-				++i;
-				++k;
+	int flag = KEY_RESIZE;
+	str[0] = '\0';
+	while (flag == KEY_RESIZE) {
+		if ((flag = mvwgetnstr(stdscr, rows-2, 0, str, n)) == OK) {
+			if (!str[0]) {
+				flag = KEY_RESIZE;
+				continue;
 			}
-			else if (ch == 127 && i > 1) {
-				--k;
-				--i;
-				if (str[k] < -1) 
-					--k;
-				mvdelch(rows-1, i);
-			}
-			else if (insert_wchar(ch, &wch) != FAIL && k < STR_BUF_SIZE-2) {
-				wbuf.chars[0] = ch;
-				add_wch(&wbuf);
-				str[k] = wch[0];
-				str[k+1] = wch[1];
-				++i;
-				k+=2;
-			}
-			else if (ch == 10) {
-				if (wants_exit(str)) {
-					end();
-				}
-				str[k] = '\0';
-				writestr(str);
-				while (i > 1) {
-					--i;
-					mvdelch(rows-1, i);
-				}
-				k = 0;
-			}
+			move(rows-2, 0);
+			clrtoeol();
 		}
-	 /* 410 127 */
+		else if (flag == KEY_RESIZE) {
+			readstr(str, n); /* For some reason after resize there is always one fail readstr, so we intercept it */
+		}
 	}
-		
-	if (mvwgetnstr(stdscr, rows-1, 0, str, n-1) == OK) {
-		clrtoeol();
-		return 1;
-	}
-	return FAIL;
+	return flag;
 }
-
 void writestr(char * str) {
-	static int i = 0;
+	int i = (lnum < rows) ? lnum : rows - lnum % 5;
 	if (str[0]) {
-        mvwaddstr(chatbox, i++, 1, str);
+        mvwaddstr(chatbox, i, 1, str);
+		add_line(str);
         if (i == rows-CHATBOX_BOTTOM_SPAN - 2) {  
             wscrl(chatbox, 5);
-            i -= 5;
         }
 		wrefresh(chatbox);
 	}
@@ -68,8 +37,7 @@ void readint(int * n) {
 	char buf[INT_AS_STR_LENGTH];
 	int i = 0, len;
 	*n = 0;
-	int ch;
-	if (readstr(buf, INT_AS_STR_LENGTH) && !wants_exit(buf)) {
+	if (readstr(buf, INT_AS_STR_LENGTH)&& !wants_exit(buf)) {
 		writestr(buf);
 		len = strlen(buf);	
 		while (buf[i] && i < INT_AS_STR_LENGTH) {
@@ -138,4 +106,50 @@ wint_t decode_wchar(int (*letter)[2]) {
 		default:
 			return FAIL;
 	}
+}
+
+void add_line(char * str) {
+	int i = (lnum < MAX_LINES) ? lnum : lnum % 65000;
+	if (!lines) {
+		if (!(lines = malloc(LINES_MEM_SEG * sizeof(char *)))) {
+			perror("Couldn't allocate memory for chat buffer.");
+			end();
+		}
+	}
+	if (lnum % LINES_MEM_SEG == 0 && lnum < MAX_LINES) {
+		char ** tmp = lines;
+		if (!(tmp = realloc(lines, (lnum + LINES_MEM_SEG) * sizeof(char *)))) {
+			perror("Couldn't expand memory for chat buffer.");
+			free(lines);
+			end();
+		}
+		lines = tmp;
+	}
+
+	if (!(lines[i] = malloc((strlen(str) + 1) * sizeof(char)))) {
+		int j;
+		perror("Couldn't allocate memory for saving the line.");
+		for (j = 0; j < lnum; ++j) {
+			free(lines[j]);
+		}
+		free(lines);
+		end();
+	}
+	
+	/* Everything has gone fine */
+
+	strcpy(lines[i], str);
+	++lnum;
+		
+}
+
+void display_lines() {
+	short j = 0;
+	short chatbox_rows = rows - CHATBOX_BOTTOM_SPAN - 2;
+	int i = (lnum > chatbox_rows) ? lnum - chatbox_rows : 0;
+	while (i < lnum) {
+		mvwaddstr(chatbox, j++, 1, lines[i]); 
+		++i;
+	}
+	wrefresh(chatbox);
 }

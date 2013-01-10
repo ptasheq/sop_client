@@ -20,6 +20,7 @@
 
 extern WINDOW * chatbox; /* basic output for majority of modules*/
 extern WINDOW * chatbox_border; /* window that is a border for chatbox */
+extern WINDOW * msgbox; /* basic input for majority of modules */
 
 extern int cols, rows; /* width and height of curses window */
 

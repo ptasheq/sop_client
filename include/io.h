@@ -7,6 +7,8 @@
 
 #define INT_AS_STR_LENGTH 10 
 #define ASCII_TO_INT 48
+#define LINES_MEM_SEG 15 
+#define MAX_LINES 65000
 
 #define wants_exit(str) strcmp(str, "[exit]") == 0 ? 1 : 0
 #define wants_send_chat_message(str) str[0] == '[' ? 0 : 1
@@ -19,11 +21,16 @@
 #define wants_rooms_list(str) strcmp(str, "[rooms]") == 0 ? 1 : 0
 #define wants_room_users_list(str) strcmp(str, "[roomusers]") == 0 ? 1 : 0
 
+extern unsigned short int lnum;
+extern char ** lines; 
+
 short readstr(char *, int);
 void writestr(char *);
 void readint(int *);
 int power(int, int);
 int insert_wchar(wint_t, int (*)[2]);
 wint_t decode_wchar(int (*)[2]);
+void add_line(char *);
+void display_lines();
 
 #endif
