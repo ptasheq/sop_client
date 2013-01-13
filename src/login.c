@@ -71,7 +71,6 @@ void login() {
 }
 
 void logout(int flag) {
-	set_signal(SIGALRM, logout);
 	if (flag) { /* Serves as signal handle */
 		if (!signal_handled)
 			signal_handled++; 

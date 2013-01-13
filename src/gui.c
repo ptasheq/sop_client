@@ -35,7 +35,7 @@ void init_colors() {
 }
 
 void gfx_init() {
-	signal(SIGWINCH, winch_hook);
+	set_signal(SIGWINCH, winch_hook);
 	setlocale(LC_CTYPE, "pl_PL.utf8");
 	initscr();
 	init_colors();
@@ -48,7 +48,6 @@ void gfx_init() {
 	refresh();
 	chatbox_border = create_newwin(1, 1, rows-CHATBOX_BOTTOM_SPAN, cols-CHATBOX_BOTTOM_SPAN, DRAW_BORDER);
 	chatbox = create_newwin(2, 2, rows-CHATBOX_BOTTOM_SPAN-2, cols-CHATBOX_BOTTOM_SPAN-2, DRAW_NO_BORDER);
-	/*on_resize(); */
 }
 
 void gfx_free() {
@@ -74,5 +73,5 @@ void winch_hook() {
 	wrefresh(chatbox_border);
 	display_lines();
 	doupdate();
-	signal(SIGWINCH, winch_hook);
+	set_signal(SIGWINCH, winch_hook);
 }

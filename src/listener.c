@@ -77,11 +77,12 @@ void listener_loop() {
 						}
 						await_message[ROOM_USERS] = NOAWAIT;
 					}
-					if (time(NULL) - t >= TIMEOUT) { /* server is not responding */
+					if (time(NULL) - t >= TIMEOUT) { /*server is not responding */
 						t = time(NULL);
 						kill(getppid(), SIGTIMEOUT);
 						break;
 					}
+					msleep(WAIT_TIME);
 				}
 			}
 			msleep(100);
@@ -128,7 +129,6 @@ void change_login_state() {
 			return;
 		}
 		/* Everything went fine */
-		write(Pdesc[1], &received, sizeof(char));
 	}
 }
 

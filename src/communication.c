@@ -19,10 +19,13 @@ void join(char * str) {
 			room_data->operation_type = ENTER_ROOM;
 			strcpy(room_data->user_name, username);
 			strcpy(room_data->room_name, str);
-			if (send_message(room_data->type, room_data) != FAIL && wait_until_received(room_data->type) != FAIL) {
+			if (send_message(room_data->type, room_data) != FAIL && wait_until_received(RESPONSE) != FAIL) {
 				if (response_data.response_type == ENTERED_ROOM_SUCCESS) {
+					char buf[50];
 					inroom = 1;
 					strcpy(roomname, room_data->room_name);
+					sprintf(buf, "%s: %s", "You've successfully entered room", roomname);
+					writestr(buf);
 				}
 				else {
 					writestr("Couldn't enter room.");
@@ -41,9 +44,12 @@ void join(char * str) {
 				room_data->operation_type = CHANGE_ROOM;
 				strcpy(room_data->user_name, username);
 		   		strcpy(room_data->room_name, str);
-				if (send_message(room_data->type, room_data) != FAIL && wait_until_received(room_data->type) != FAIL) {
+				if (send_message(room_data->type, room_data) != FAIL && wait_until_received(RESPONSE) != FAIL) {
            			if (response_data.response_type == CHANGE_ROOM_SUCCESS) {
+						char buf[50];
 						strcpy(roomname, room_data->room_name);
+						sprintf(buf, "%s: %s", "You've successfully changed room for", roomname);
+						writestr(buf);
             		}
             		else {
                 		writestr("Couldn't change room.");
@@ -73,7 +79,7 @@ void leave() {
 			room_data->operation_type = LEAVE_ROOM;
 			strcpy(room_data->user_name, username);
 			strcpy(room_data->room_name, roomname);
-			if (send_message(room_data->type, room_data) != FAIL && wait_until_received(room_data->type) != FAIL) {
+			if (send_message(room_data->type, room_data) != FAIL && wait_until_received(RESPONSE) != FAIL) {
 				inroom = 0;
            		if (response_data.response_type == LEAVE_ROOM_SUCCESS) {
 					writestr(response_data.content);
@@ -100,7 +106,7 @@ void send_chatmsg(char * str) {
 		strcpy(chatmsg_data.sender, username);
 		strcpy(chatmsg_data.receiver, roomname);
 		strcpy(chatmsg_data.message, str);
-		if (send_message(chatmsg_data.type, chatmsg_data) != FAIL && wait_until_received(chatmsg_data.type) != FAIL) {
+		if (send_message(chatmsg_data.type, chatmsg_data) != FAIL && wait_until_received(RESPONSE) != FAIL) {
 			if (response_data.response_type == MSG_SEND) {
 				writestr("message sent successfully.");
 			}
@@ -124,7 +130,7 @@ void send_priv(char * str) {
            	if (chatmsg_data.message[0]) {
            		get_time(chatmsg_data.send_time);
 				chatmsg_data.msg_type = PRIVATE;
-				if (send_message(chatmsg_data.type, &chatmsg_data) != FAIL && wait_until_received(chatmsg_data.type) != FAIL) {
+				if (send_message(chatmsg_data.type, &chatmsg_data) != FAIL && wait_until_received(RESPONSE) != FAIL) {
 					if (response_data.response_type == MSG_SEND) {
 						writestr("message sent successfully.");
 					}
@@ -157,6 +163,9 @@ void request(const int rtype) {
 				if (allocate_mem(mtype, &request_response_data)) {
 					if (wait_until_received(mtype) != FAIL) {
 						display_request_result();	
+					}
+					else {
+						writestr("Request wasn't proceeded.");
 					}
 					free_mem(request_response_data);
 				}
@@ -225,36 +234,36 @@ void display_request_result() {
 	}
 }
 
-int wait_until_received(const int mtype) {
+int wait_until_received(const int mtype) { 
     if (mtype > 0 && mtype <= MSG_TYPES_NUMBER) {
         int i = 0;
-        char received;
+        char received = 0;
 		if (write(Pdesc2[1], &mtype, sizeof(int)) != FAIL)
-		msleep(10);
         while (read(Pdesc[0], &received, sizeof(char)) == FAIL && i < MAX_FAILS) {
             ++i;
-            msleep(1000);
+            msleep(WAIT_TIME);
         }
-        if (i == MAX_FAILS || !received)
+        if (i == MAX_FAILS )
             return FAIL;
 		i = 0;
         if (mtype == RESPONSE) {
 			while (read(Pdesc[0], &response_data.response_type, sizeof(int)) == FAIL && i < MAX_FAILS) {
 				++i;
-				msleep(10);
-			} 
-			while (read(Pdesc[0], response_data.content, RESPONSE_LENGTH) == FAIL && i < MAX_FAILS) {
-				++i;
-				msleep(10);
+				msleep(WAIT_TIME);
 			}
 			if (i == MAX_FAILS)
 				return FAIL;
+			i = 0;
+			while (read(Pdesc[0], response_data.content, RESPONSE_LENGTH) == FAIL && i < MAX_FAILS) {
+				++i;
+				msleep(WAIT_TIME);
+			}
         }
 		else if (mtype == USERS || mtype == ROOMS || mtype == ROOM_USERS_LIST) {
 			int j = 0;
 			while (read(Pdesc[0], request_response_data->content[j], USER_NAME_MAX_LENGTH) == FAIL) {
 				++i;
-				msleep(10);
+				msleep(WAIT_TIME);
 			}
 			if (i == MAX_FAILS)
 				return FAIL;
