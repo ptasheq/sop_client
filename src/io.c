@@ -2,6 +2,7 @@
 
 unsigned short int lnum = 0;
 char ** lines = NULL; 
+unsigned short int signal_handled = 0;
 
 short readstr(char * str, int n) { /* Reads always one character less, so prevents overflow */
 	int flag = KEY_RESIZE;
@@ -16,7 +17,11 @@ short readstr(char * str, int n) { /* Reads always one character less, so preven
 			clrtoeol();
 		}
 		else if (flag == KEY_RESIZE) {
-			readstr(str, n); /* For some reason after resize there is always one fail readstr, so we intercept it */
+			readstr(str, n); /* For some reason after signal there is always one fail readstr, so we intercept it */
+		}
+		else if (signal_handled) {
+			--signal_handled;
+			flag = readstr(str, n);
 		}
 	}
 	return flag;
@@ -37,7 +42,8 @@ void readint(int * n) {
 	char buf[INT_AS_STR_LENGTH];
 	int i = 0, len;
 	*n = 0;
-	if (readstr(buf, INT_AS_STR_LENGTH)&& !wants_exit(buf)) {
+	
+	if (readstr(buf, INT_AS_STR_LENGTH) != FAIL && !wants_exit(buf)) {
 		writestr(buf);
 		len = strlen(buf);	
 		while (buf[i] && i < INT_AS_STR_LENGTH) {
@@ -69,45 +75,6 @@ int power(int base, int exp) {
 	return res;
 }
 
-int insert_wchar(wint_t ch, int (*letter)[2]) {
-	switch(ch) {
-		case 260: case 261:
-		case 262: case 263:
-		case 280: case 281:
-			(*letter)[0] = -60;
-			(*letter)[1] = ch - 384;
-			break;
-		case 321: case 322: 
-		case 323: case 324:
-		case 346: case 347: 
-		case 377: case 378:
-		case 379: case 380:
-			(*letter)[0] = -59;
-			(*letter)[1] = ch - 448;
-			break;
-		case 211: case 243:	
-			(*letter)[0] = -61;
-			(*letter)[1] = ch - 320;
-			break;
-		default:
-			(*letter)[0] = FAIL;
-	}
-	return (*letter)[0];
-} 
-
-wint_t decode_wchar(int (*letter)[2]) {
-	switch((*letter)[0]) {
-		case -59:
-			return (*letter)[0] + 448;
-		case -60:
-			return (*letter)[0] + 384;
-		case -61:
-			return (*letter)[0] + 320;
-		default:
-			return FAIL;
-	}
-}
-
 void add_line(char * str) {
 	int i = (lnum < MAX_LINES) ? lnum : lnum % 65000;
 	if (!lines) {
@@ -135,9 +102,7 @@ void add_line(char * str) {
 		free(lines);
 		end();
 	}
-	
 	/* Everything has gone fine */
-
 	strcpy(lines[i], str);
 	++lnum;
 		

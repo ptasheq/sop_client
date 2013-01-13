@@ -23,13 +23,12 @@
 
 extern unsigned short int lnum;
 extern char ** lines; 
+extern unsigned short int signal_handled;
 
 short readstr(char *, int);
 void writestr(char *);
 void readint(int *);
 int power(int, int);
-int insert_wchar(wint_t, int (*)[2]);
-wint_t decode_wchar(int (*)[2]);
 void add_line(char *);
 void display_lines();
 

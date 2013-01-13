@@ -16,6 +16,7 @@
 #define USER_NAME_MAX_LENGTH 10
 #define CHATBOX_BOTTOM_SPAN 4
 #define MAX_FAILS 5
+#define WAIT_TIME 10
 #define FAIL -1
 
 extern WINDOW * chatbox; /* basic output for majority of modules*/

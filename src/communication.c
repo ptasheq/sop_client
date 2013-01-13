@@ -3,6 +3,7 @@
 #include <time.h>
 #include "structmem.h"
 #include "io.h"
+#include <signal.h>
 
 Msg_room * room_data = NULL;
 Msg_request_response * request_response_data = NULL;
@@ -226,13 +227,13 @@ void display_request_result() {
 
 int wait_until_received(const int mtype) {
     if (mtype > 0 && mtype <= MSG_TYPES_NUMBER) {
-        int i = 0, n;
+        int i = 0;
         char received;
-		write(Pdesc2[1], &mtype, 4);
+		if (write(Pdesc2[1], &mtype, sizeof(int)) != FAIL)
 		msleep(10);
-        while (read(Pdesc[0], &received, 1) == FAIL && i < MAX_FAILS) {
+        while (read(Pdesc[0], &received, sizeof(char)) == FAIL && i < MAX_FAILS) {
             ++i;
-            msleep(10);
+            msleep(1000);
         }
         if (i == MAX_FAILS || !received)
             return FAIL;
@@ -267,4 +268,12 @@ int wait_until_received(const int mtype) {
             return 1;
     }
     return FAIL;
+}
+
+void set_signal(int signum, sa_handler handler) {
+	struct sigaction sh;
+	sh.sa_handler = handler;
+	sigemptyset(&sh.sa_mask);
+	sh.sa_flags = 0;
+	sigaction(signum, &sh, NULL);
 }

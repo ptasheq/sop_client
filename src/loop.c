@@ -10,7 +10,7 @@ void program_loop() {
 	writestr("In case you need help, type \"[help]\".");
 	while (readstr(str, STR_BUF_SIZE) != FAIL && !wants_exit(str)) {
 		perform_action(str);	
-	}	
+	}
 }
 
 void perform_action(char * str) {
@@ -19,10 +19,9 @@ void perform_action(char * str) {
 	}
 	else if (wants_login(str)) {
 		login();
-		listener_loop();
 	}
 	else if (wants_logout(str)) {
-		logout();
+		logout(0);
 	}
 	else if (wants_help(str)) {
 		writestr("(obviously <> brackets are not required)");

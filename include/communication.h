@@ -21,4 +21,6 @@ int get_username(char *);
 void get_time(char *);
 void display_request_result();
 int wait_until_received(const int);
+typedef void (*sa_handler)(int);
+void set_signal(int, sa_handler);
 #endif

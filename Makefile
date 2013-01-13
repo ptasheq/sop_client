@@ -1,8 +1,8 @@
 CC = gcc
 LD = gcc
 
-CFLAGS = -ansi -Wall -lncursesw -I include/ -g 
-LDFLAGS = -ansi -Wall -lncursesw -I include/ -g
+CFLAGS = -ansi -Wall -lncursesw -I include/ -g -D_POSIX_C_SOURCE
+LDFLAGS = -ansi -Wall -lncursesw -I include/ -g -D_POSIX_C_SOURCE
 
 SRCS = communication.c main.c gui.c init.c io.c listener.c login.c loop.c protocol.c structmem.c
 OBJECTS = $(SRCS:.c=.o)
