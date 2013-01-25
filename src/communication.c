@@ -211,13 +211,13 @@ void get_time(char * str) { /* all numbers are set because of result of ctime (c
 
     if (time(&curtime) != FAIL) {
         strncpy(buf, ctime(&curtime), 29);
-        while (buf[i] && spaces < 4) {
+        while (buf[i] && spaces < 3) {
             if (buf[i] == ' ') {
                 ++spaces;
             }
             ++i;
         }
-        if (spaces == 4) {
+        if (spaces == 3) {
             strncpy(str, &buf[i], 5);
             str[5] = '\0';
             return;

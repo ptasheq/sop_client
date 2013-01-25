@@ -14,7 +14,9 @@ char username[USER_NAME_MAX_LENGTH];
 void login() {
 	key_t own_num, serv_num;
 	char received;
+	fprintf(stderr, "%d %d", ch_pid, getpid());
 	set_signal(SIGTIMEOUT, logout);
+	set_signal(SIGLOG, SIG_IGN);
 	while (!logged) {
 		writestr("Please insert server address(queue number):");
 		readint(&serv_num);
@@ -31,7 +33,7 @@ void login() {
 		if (allocate_mem(LOGIN, &login_data)) {
 			writestr("Please enter your nickname:");
 			if (readstr(login_data->username, USER_NAME_MAX_LENGTH) != FAIL && !wants_exit(login_data->username)) {
-				login_data->ipc_num = own_num;
+				login_data->ipc_num = own_id;
 				login_data->type = LOGIN;
 				if (send_message(login_data->type, login_data) != FAIL) {
 					msleep(WAIT_TIME);

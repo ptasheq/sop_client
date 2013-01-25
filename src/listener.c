@@ -112,7 +112,6 @@ void change_login_state() {
 	logged = !logged;
 	if (logged) {
 		int i = 0;
-		char received = 1;
 		while (read(Pdesc2[0], &serv_id, sizeof(int)) == FAIL && i < MAX_FAILS) {
 			msleep(WAIT_TIME);
 			++i;

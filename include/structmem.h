@@ -4,8 +4,9 @@
 #include "libs.h"
 #include "protocol.h"
 
-#define free_mem(ptr) {free(ptr); ptr = NULL;}
+#define allocate_mem(type, ptr) am(type, (void **) ptr)
+#define free_mem(ptr) ptr == NULL ? 0 : free(ptr); ptr = NULL;
 
-void * allocate_mem(const int, ...);
+void * am(const int, void **);
 
 #endif
