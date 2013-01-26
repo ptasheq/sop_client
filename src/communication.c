@@ -76,14 +76,15 @@ void join(char * str) {
 void leave() {
 	if (is_inroom()) {
 		if (allocate_mem(ROOM, &room_data)) {
+			room_data->type = ROOM;
 			room_data->operation_type = LEAVE_ROOM;
 			strcpy(room_data->user_name, username);
 			strcpy(room_data->room_name, roomname);
 			if (send_message(room_data->type, room_data) != FAIL && wait_until_received(RESPONSE) != FAIL) {
 				inroom = 0;
            		if (response_data.response_type == LEAVE_ROOM_SUCCESS) {
-					writestr(response_data.content);
-           		}
+           			writestr("Successfully left room");
+				}
 				else {
 					writestr("Some error occurred.");
 				}
@@ -236,46 +237,21 @@ void display_request_result() {
 
 int wait_until_received(const int mtype) { 
     if (mtype > 0 && mtype <= MSG_TYPES_NUMBER) {
-        int i = 0;
-        char received = 0;
-		if (write(Pdesc2[1], &mtype, sizeof(int)) != FAIL)
-        while (read(Pdesc[0], &received, sizeof(char)) == FAIL && i < MAX_FAILS) {
-            ++i;
-            msleep(WAIT_TIME);
-        }
-        if (i == MAX_FAILS )
-            return FAIL;
-		i = 0;
+		if (pipewrite(Pdesc2[1], Pdesc[0], &mtype, sizeof(int)) == FAIL)
+			return FAIL;
         if (mtype == RESPONSE) {
-			while (read(Pdesc[0], &response_data.response_type, sizeof(int)) == FAIL && i < MAX_FAILS) {
-				++i;
-				msleep(WAIT_TIME);
-			}
-			if (i == MAX_FAILS)
+			if (piperead(Pdesc2[1], Pdesc[0], &response_data.response_type, sizeof(int)) == FAIL ||
+			piperead(Pdesc2[1], Pdesc[0], response_data.content, RESPONSE_LENGTH) == FAIL) {
 				return FAIL;
-			i = 0;
-			while (read(Pdesc[0], response_data.content, RESPONSE_LENGTH) == FAIL && i < MAX_FAILS) {
-				++i;
-				msleep(WAIT_TIME);
 			}
         }
 		else if (mtype == USERS || mtype == ROOMS || mtype == ROOM_USERS_LIST) {
 			int j = 0;
-			while (read(Pdesc[0], request_response_data->content[j], USER_NAME_MAX_LENGTH) == FAIL) {
-				++i;
-				msleep(WAIT_TIME);
-			}
-			if (i == MAX_FAILS)
-				return FAIL;
-			++j;
-			while (read(Pdesc[0], request_response_data->content[j], USER_NAME_MAX_LENGTH) > 0 &&
-				j < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER && request_response_data->content[j][0]) {
+			while (piperead(Pdesc2[1], Pdesc[0], request_response_data->content[j], USER_NAME_MAX_LENGTH) > FAIL)
 				++j;
-			}
 		}
-        if (i != MAX_FAILS)
-            return 1;
-    }
+		return 0;
+	}
     return FAIL;
 }
 
@@ -285,4 +261,29 @@ void set_signal(int signum, sa_handler handler) {
 	sigemptyset(&sh.sa_mask);
 	sh.sa_flags = 0;
 	sigaction(signum, &sh, NULL);
+}
+
+short piperead(int pipedest, int pipesrc, void * dest, short length) {
+	char received = 1;
+	short i = 0;
+	while (read(pipesrc, dest, length) == FAIL && i < MAX_FAILS) {
+		++i;
+		msleep(WAIT_TIME);
+	}
+	if (i < MAX_FAILS) {
+		write(pipedest, &received, sizeof(char));
+		return 0;
+	}
+	return FAIL;
+}
+
+short pipewrite(int pipedest, int pipesrc, const void * src, short length) {
+	char received = 5;
+	short i = 0;
+	int x = write(pipedest, src, length);
+	while (read(pipesrc, &received, sizeof(char)) == FAIL && i < MAX_FAILS) {
+		++i;
+		msleep(WAIT_TIME);
+	}
+	return (i < MAX_FAILS) ? 0 : FAIL;
 }

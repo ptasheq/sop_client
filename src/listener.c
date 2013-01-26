@@ -2,6 +2,7 @@
 #include "communication.h"
 #include "login.h"
 #include <time.h>
+#include <errno.h>
 
 int Pdesc[2];
 int Pdesc2[2];
@@ -31,14 +32,15 @@ void listener_loop() {
 				Msg_request heartbeat = {REQUEST, PONG, "\0"};
 				Msg_request_response mrr_data;
 				Msg_chat_message mcm_data;
-				int await_message[ROOM_USERS + 1] = {0};
+				int await_message[ROOM_USERS + 1] = {NOAWAIT};
 				int buf, i;
-				char received = 1;
+				char received=1;
+				char str[10];
 				time_t t = time(NULL); /* for checking timeout */
 				strcpy(heartbeat.user_name, username);
 				while (is_logged()) {
 					i = 0;
-					if (read(Pdesc2[0], &buf, sizeof(int)) != FAIL && buf >= LOGIN && buf <= ROOM_USERS) {
+					if (read(Pdesc2[0], &buf, sizeof(int)) > 0 && buf >= LOGIN && buf <= ROOM_USERS) {
 						write(Pdesc[1], &received, sizeof(char));
 						await_message[buf] = AWAIT;
 					}
@@ -48,15 +50,16 @@ void listener_loop() {
 							send_message(heartbeat.type, &heartbeat);
 						}
 						else if (await_message[RESPONSE]) {
-							write(Pdesc[1], &response_data.response_type, sizeof(int));
-							write(Pdesc[1], response_data.content, RESPONSE_LENGTH);
+							pipewrite(Pdesc[1], Pdesc2[0], &response_data.response_type, sizeof(int));
+							pipewrite(Pdesc[1], Pdesc2[0], response_data.content, strlen(response_data.content));
+							msleep(500);
 							await_message[RESPONSE] = NOAWAIT;
 						}
 					}
-					else if (receive_message(MESSAGE, &mcm_data) != FAIL) {
+					/*if (receive_message(MESSAGE, &mcm_data) != FAIL) {
 						print_msg(getppid(), &mcm_data);
-					}
-					else if (await_message[USERS] && receive_message(USERS, mrr_data) != FAIL) {
+					}*/
+					if (await_message[USERS] && receive_message(USERS, mrr_data) != FAIL) {
 						while (i < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER && mrr_data.content[i][0]) {
 							write(Pdesc[1], mrr_data.content[i], USER_NAME_MAX_LENGTH);
 							i++;
@@ -109,26 +112,15 @@ void listener_end() {
 
 void change_login_state() {
 	set_signal(SIGLOG, change_login_state);
-	logged = !logged;
-	if (logged) {
+	if (!logged) {
 		int i = 0;
-		while (read(Pdesc2[0], &serv_id, sizeof(int)) == FAIL && i < MAX_FAILS) {
-			msleep(WAIT_TIME);
-			++i;
-		}
-		if (i == MAX_FAILS) {
+		if (piperead(Pdesc[1], Pdesc2[0], &serv_id, sizeof(int)) == FAIL)
 			return;
-		}
-		i = 0;
-		while (read(Pdesc2[0], &own_id, sizeof(int)) == FAIL && i < MAX_FAILS) {
-			msleep(WAIT_TIME);
-			++i;
-		}
-		if (i == MAX_FAILS) {
+		if (piperead(Pdesc[1], Pdesc2[0], &own_id, sizeof(int)) == FAIL)
 			return;
-		}
 		/* Everything went fine */
 	}
+	logged = !logged;
 }
 
 void print_msg(int p_pid, Msg_chat_message * mcm) {

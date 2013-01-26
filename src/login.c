@@ -12,21 +12,21 @@ int ch_pid;
 char username[USER_NAME_MAX_LENGTH];
 
 void login() {
-	key_t own_num, serv_num;
-	char received;
-	fprintf(stderr, "%d %d", ch_pid, getpid());
+	key_t own_num;
+	struct msqid_ds stats;
 	set_signal(SIGTIMEOUT, logout);
 	set_signal(SIGLOG, SIG_IGN);
 	while (!logged) {
-		writestr("Please insert server address(queue number):");
-		readint(&serv_num);
-		while ((serv_id = msgget(serv_num, 0666)) == FAIL || serv_num == FAIL) {
-			writestr("Please insert correct address:");
-			readint(&serv_num);
+		writestr("Please insert server queue id:");
+		readint(&serv_id);
+		while (serv_id == FAIL || msgctl(serv_id, IPC_STAT, &stats) == FAIL) {
+			writestr("Please insert correct queue id:");
+			readint(&serv_id);
 		}
+		
 		writestr("Please choose client address(queue number):");
 		readint(&own_num);
-		while (own_num == FAIL || own_num == serv_num || (own_id = msgget(own_num, IPC_CREAT | 0666)) == FAIL) {
+		while (own_num == FAIL || (own_id = msgget(own_num, IPC_CREAT | 0666)) == FAIL || own_id == serv_id) {
 			writestr("Please enter correct address(different from server):");
 			readint(&own_num);
 		}
@@ -42,15 +42,9 @@ void login() {
 						writestr(response_data.content);
 						logged = 1;
 						kill(ch_pid, SIGLOG);
-						write(Pdesc2[1], &serv_id, sizeof(int));
-						write(Pdesc2[1], &own_id, sizeof(int));
-						msleep(WAIT_TIME);
-						if (read(Pdesc[0], &received, sizeof(char))) {
-							strcpy(username, login_data->username);
-						}
-						else {
-							strcpy(login_data->username, "[exit]");
-						}
+						pipewrite(Pdesc2[1], Pdesc[0], &serv_id, sizeof(int));
+						pipewrite(Pdesc2[1], Pdesc[0], &own_id, sizeof(int));
+						strcpy(username, login_data->username);
 					}
 					else if (response_data.response_type == LOGIN_FAILED) {
 						writestr("Server rejected connection");
@@ -85,7 +79,7 @@ void logout(int flag) {
 			login_data->type = LOGOUT;
 			strcpy(login_data->username, username);
 			if (send_message(login_data->type, login_data) != FAIL) {
-				if (wait_until_received(RESPONSE)) {
+				if (wait_until_received(RESPONSE) > FAIL) {
 					if (response_data.response_type == LOGOUT_SUCCESS) {
 						writestr("Successfully logout.");
 					}

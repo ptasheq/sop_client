@@ -23,4 +23,6 @@ void display_request_result();
 int wait_until_received(const int);
 typedef void (*sa_handler)(int);
 void set_signal(int, sa_handler);
+short piperead(int, int, void *, short);
+short pipewrite(int, int, const void *, short);
 #endif
