@@ -1,8 +1,10 @@
 #include "io.h"
 
-unsigned short int lnum = 0;
 char ** lines = NULL; 
-unsigned short int signal_handled = 0;
+unsigned short signal_handled = 0;
+unsigned short lnum = 0;
+unsigned short resize = 0;
+int posy = 0;
 
 short readstr(char * str, int n) { /* Reads always one character less, so prevents overflow */
 	int flag = KEY_RESIZE;
@@ -20,20 +22,24 @@ short readstr(char * str, int n) { /* Reads always one character less, so preven
 			readstr(str, n); /* For some reason after signal there is always one fail readstr, so we intercept it */
 		}
 		else if (signal_handled) {
-			--signal_handled;
+			signal_handled--;	
+			writestr(str);
 			flag = readstr(str, n);
 		}
 	}
 	return flag;
 }
-void writestr(char * str) {
-	int i = (lnum < rows) ? lnum : rows - lnum % 5;
+void writestr(char * str) {	
 	if (str[0]) {
-        mvwaddstr(chatbox, i, 1, str);
-		add_line(str);
-        if (i == rows-CHATBOX_BOTTOM_SPAN - 2) {  
+        posy = (posy > rows-CHATBOX_BOTTOM_SPAN-2) ? rows-CHATBOX_BOTTOM_SPAN-2 : posy;
+		/*posy = (resize && lnum > rows-CHATBOX_BOTTOM_SPAN-2) ? rows-CHATBOX_BOTTOM_SPAN-7 : posy;*/
+		if (posy == rows-CHATBOX_BOTTOM_SPAN - 2) {  
             wscrl(chatbox, 5);
+			posy -=5;
         }
+        mvwaddstr(chatbox, posy, 1, str);
+		posy++; 
+		add_line(str);
 		wrefresh(chatbox);
 	}
 }
@@ -110,11 +116,14 @@ void add_line(char * str) {
 
 void display_lines() {
 	short j = 0;
-	short chatbox_rows = rows - CHATBOX_BOTTOM_SPAN - 2;
+	short chatbox_rows = rows - CHATBOX_BOTTOM_SPAN - 7;
 	int i = (lnum > chatbox_rows) ? lnum - chatbox_rows : 0;
+	if (!resize)
+		++resize;
 	while (i < lnum) {
 		mvwaddstr(chatbox, j++, 1, lines[i]); 
 		++i;
 	}
+	posy = (lnum > chatbox_rows) ? chatbox_rows : lnum;
 	wrefresh(chatbox);
 }

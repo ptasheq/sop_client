@@ -21,7 +21,6 @@
 #define wants_rooms_list(str) !strcmp(str, "[rooms]")
 #define wants_room_users_list(str) !strcmp(str, "[roomusers]")
 
-extern unsigned short int lnum;
 extern char ** lines; 
 extern unsigned short int signal_handled;
 

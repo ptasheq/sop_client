@@ -8,6 +8,7 @@
 void program_loop() {
 	char str[STR_BUF_SIZE];
 	writestr("In case you need help, type \"[help]\".");
+	set_signal(SIGCHAT, print_msg);
 	while (readstr(str, STR_BUF_SIZE) != FAIL && !wants_exit(str)) {
 		perform_action(str);	
 	}
@@ -49,13 +50,26 @@ void perform_action(char * str) {
 		request(ROOMS_LIST);
 	}
 	else if (wants_room_users_list(str)) {
-		request(ROOM_USERS_LIST);
+		writestr("Option has not been implemented.");
+		/*request(ROOM_USERS_LIST);*/
 	}
-	else { /* private message */
-		send_priv(str);
-		writestr("priv");
-		
+	else { /* private message or some trash*/
+		if (str[0] == '[') {
+			short i = 1;
+			while (str[i]) {
+				if (str[i] == ']' && i > 1) { /* there is something between brackets */
+					i = 0;
+					break;
+				}
+				++i;
+			}
+			if (!i) {
+				send_priv(str);
+			}
+			else {
+				writestr("Unknown option.");
+			}
+		}
 	}
 	
 }
-

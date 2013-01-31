@@ -5,6 +5,8 @@
 
 const int DRAW_BORDER = 1;
 const int DRAW_NO_BORDER = 0;
+extern int posy;
+extern unsigned short lnum;
 
 WINDOW * create_newwin(int, int, int, int, int); /* creates new window within console screen */
 void destroy_win(WINDOW *); /* erases window from screen and memory */

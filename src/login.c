@@ -15,7 +15,6 @@ void login() {
 	key_t own_num;
 	struct msqid_ds stats;
 	set_signal(SIGTIMEOUT, logout);
-	set_signal(SIGLOG, SIG_IGN);
 	while (!logged) {
 		writestr("Please insert server queue id:");
 		readint(&serv_id);
@@ -44,6 +43,7 @@ void login() {
 						kill(ch_pid, SIGLOG);
 						pipewrite(Pdesc2[1], Pdesc[0], &serv_id, sizeof(int));
 						pipewrite(Pdesc2[1], Pdesc[0], &own_id, sizeof(int));
+						pipewrite(Pdesc2[1], Pdesc[0], login_data->username, strlen(login_data->username));
 						strcpy(username, login_data->username);
 					}
 					else if (response_data.response_type == LOGIN_FAILED) {
@@ -77,6 +77,7 @@ void logout(int flag) {
 	else if (is_logged()) {
 		if (allocate_mem(LOGOUT, &login_data)) {
 			login_data->type = LOGOUT;
+			login_data->ipc_num = own_id;
 			strcpy(login_data->username, username);
 			if (send_message(login_data->type, login_data) != FAIL) {
 				if (wait_until_received(RESPONSE) > FAIL) {
@@ -106,8 +107,6 @@ void logout(int flag) {
 	else {
 		writestr("To perform it, you have to be logged in.");
 	}
+	inroom = 0;
 	set_signal(SIGTIMEOUT, logout);
 }
-
-
-

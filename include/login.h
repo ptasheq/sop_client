@@ -7,7 +7,7 @@
 
 #define is_logged() logged
 #define SIGLOG SIGALRM
-#define SIGCHAT SIGALRM
+#define SIGCHAT SIGUSR2
 #define SIGTIMEOUT SIGUSR1
 
 

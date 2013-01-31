@@ -38,7 +38,7 @@ void join(char * str) {
 		}
 	}
 	else if (is_inroom() && is_logged()) {
-		if (!strcmp(str, roomname)) { /* User didn't choose the same room to log in again */
+		if (strcmp(str, roomname)) { /* User didn't choose the same room to log in again */
 			if (allocate_mem(ROOM, &room_data)) {
 				room_data->type = ROOM;
 				room_data->operation_type = CHANGE_ROOM;
@@ -102,16 +102,18 @@ void leave() {
 
 void send_chatmsg(char * str) {
 	if (is_inroom() && is_logged()) {
+		chatmsg_data.type = MESSAGE;
 		chatmsg_data.msg_type = PUBLIC;
 		get_time(chatmsg_data.send_time);
 		strcpy(chatmsg_data.sender, username);
 		strcpy(chatmsg_data.receiver, roomname);
 		strcpy(chatmsg_data.message, str);
-		if (send_message(chatmsg_data.type, chatmsg_data) != FAIL && wait_until_received(RESPONSE) != FAIL) {
+		if (send_message(chatmsg_data.type, &chatmsg_data) != FAIL && wait_until_received(RESPONSE) != FAIL) {
 			if (response_data.response_type == MSG_SEND) {
-				writestr("message sent successfully.");
+				print_msg(0);
 			}
 			else {
+				fprintf(stderr, "%d", response_data.response_type);
 				writestr("message wasn't sent.");
 			}
 		}
@@ -125,6 +127,7 @@ void send_priv(char * str) {
 	if (is_logged()) {
 		int username_length;	
 		if ((username_length = get_username(str)) != FAIL) {
+			chatmsg_data.type = MESSAGE;
    	       	strcpy(chatmsg_data.receiver, str);
 			strcpy(chatmsg_data.sender, username);
 			strcpy(chatmsg_data.message, &str[username_length+1]);
@@ -133,7 +136,7 @@ void send_priv(char * str) {
 				chatmsg_data.msg_type = PRIVATE;
 				if (send_message(chatmsg_data.type, &chatmsg_data) != FAIL && wait_until_received(RESPONSE) != FAIL) {
 					if (response_data.response_type == MSG_SEND) {
-						writestr("message sent successfully.");
+						print_msg(0);
 					}
 					else {
 						writestr("message wasn't sent");
@@ -153,7 +156,7 @@ void send_priv(char * str) {
 	}
 }
 
-void request(const int rtype) {
+void request(const int rtype) { /* room_users_list is not handled */
 	if (is_logged() && rtype >= USERS_LIST && rtype <= ROOM_USERS_LIST ) {
 		if (allocate_mem(REQUEST, &request_data)) {
 			request_data->type = REQUEST;
@@ -249,6 +252,8 @@ int wait_until_received(const int mtype) {
 			int j = 0;
 			while (piperead(Pdesc2[1], Pdesc[0], request_response_data->content[j], USER_NAME_MAX_LENGTH) > FAIL)
 				++j;
+			if (j < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER)
+				request_response_data->content[j][0] = '\0';
 		}
 		return 0;
 	}
@@ -261,6 +266,30 @@ void set_signal(int signum, sa_handler handler) {
 	sigemptyset(&sh.sa_mask);
 	sh.sa_flags = 0;
 	sigaction(signum, &sh, NULL);
+}
+
+void print_msg(int flag) {
+	set_signal(SIGCHAT, print_msg);
+	char buf[USER_NAME_MAX_LENGTH + 10], private;
+	if (flag) {
+		char buf2[STR_BUF_SIZE];
+		if (!signal_handled) {
+			signal_handled++;
+		}
+		piperead(Pdesc2[1], Pdesc[0], &private, sizeof(char));
+		piperead(Pdesc2[1], Pdesc[0], buf, USER_NAME_MAX_LENGTH + 10);
+		piperead(Pdesc2[1], Pdesc[0], buf2, STR_BUF_SIZE);
+		if (private == PRIVATE)
+			wattron(chatbox, A_BOLD);
+		writestr(buf);
+		writestr(buf2); 
+		wattroff(chatbox, A_BOLD);
+	}
+	else {   
+		sprintf(buf, "[%s]: %s:", chatmsg_data.sender, chatmsg_data.send_time);
+		writestr(buf);
+		writestr(chatmsg_data.message);
+	}
 }
 
 short piperead(int pipedest, int pipesrc, void * dest, short length) {

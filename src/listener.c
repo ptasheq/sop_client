@@ -34,6 +34,7 @@ void listener_loop() {
 				Msg_chat_message mcm_data;
 				int await_message[ROOM_USERS + 1] = {NOAWAIT};
 				int buf, i;
+				FILE * fp = fopen("plik.txt", "w+");
 				char received=1;
 				char str[10];
 				time_t t = time(NULL); /* for checking timeout */
@@ -52,33 +53,26 @@ void listener_loop() {
 						else if (await_message[RESPONSE]) {
 							pipewrite(Pdesc[1], Pdesc2[0], &response_data.response_type, sizeof(int));
 							pipewrite(Pdesc[1], Pdesc2[0], response_data.content, strlen(response_data.content));
-							msleep(500);
+							fprintf(fp, "msg: %d\n", response_data.response_type);
 							await_message[RESPONSE] = NOAWAIT;
 						}
 					}
-					/*if (receive_message(MESSAGE, &mcm_data) != FAIL) {
-						print_msg(getppid(), &mcm_data);
-					}*/
-					if (await_message[USERS] && receive_message(USERS, mrr_data) != FAIL) {
+					if (receive_message(MESSAGE, &mcm_data) != FAIL) {
+						pipe_msg(getppid(), &mcm_data);
+					}
+					if (await_message[USERS] && receive_message(USERS, &mrr_data) != FAIL) {
 						while (i < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER && mrr_data.content[i][0]) {
-							write(Pdesc[1], mrr_data.content[i], USER_NAME_MAX_LENGTH);
+							pipewrite(Pdesc[1], Pdesc2[0], mrr_data.content[i], USER_NAME_MAX_LENGTH);
 							i++;
 						}
 						await_message[USERS] = NOAWAIT;
 					}
-					else if (await_message[ROOMS] && receive_message(ROOMS, mrr_data) != FAIL) {
+					else if (await_message[ROOMS] && receive_message(ROOMS, &mrr_data) != FAIL) {
 						while (i < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER && mrr_data.content[i][0]) {
-							write(Pdesc[1], mrr_data.content[i], USER_NAME_MAX_LENGTH);
+							pipewrite(Pdesc[1], Pdesc2[0], mrr_data.content[i], ROOM_NAME_MAX_LENGTH);
 							i++;
                         }
 						await_message[ROOMS] = NOAWAIT;
-					}
-					else if (await_message[ROOM_USERS] && receive_message(ROOM_USERS, mrr_data) != FAIL) {
-						while (i < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER && mrr_data.content[i][0]) { 
-							write(Pdesc[1], mrr_data.content[i], USER_NAME_MAX_LENGTH);
-							i++;
-						}
-						await_message[ROOM_USERS] = NOAWAIT;
 					}
 					if (time(NULL) - t >= TIMEOUT) { /*server is not responding */
 						t = time(NULL);
@@ -118,16 +112,20 @@ void change_login_state() {
 			return;
 		if (piperead(Pdesc[1], Pdesc2[0], &own_id, sizeof(int)) == FAIL)
 			return;
+		if (piperead(Pdesc[1], Pdesc2[0], username, USER_NAME_MAX_LENGTH) == FAIL)
+			return;
 		/* Everything went fine */
 	}
 	logged = !logged;
 }
 
-void print_msg(int p_pid, Msg_chat_message * mcm) {
+void pipe_msg(int p_pid, Msg_chat_message * mcm) {
 	char buf[USER_NAME_MAX_LENGTH + 10];
 	sprintf(buf, "[%s]: %s:", mcm->sender, mcm->send_time);
-	kill(p_pid, SIGCHAT);
-	write(Pdesc[1], buf, USER_NAME_MAX_LENGTH + 10);
-	write(Pdesc[1], mcm->message, STR_BUF_SIZE);
-
+	if (p_pid > FAIL) {
+		kill(p_pid, SIGCHAT);
+		pipewrite(Pdesc[1], Pdesc2[0], (char *) &mcm->msg_type, sizeof(char));
+		pipewrite(Pdesc[1], Pdesc2[0], buf, USER_NAME_MAX_LENGTH + 10);
+		pipewrite(Pdesc[1], Pdesc2[0], mcm->message, STR_BUF_SIZE);
+	}
 }

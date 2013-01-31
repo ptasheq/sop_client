@@ -61,7 +61,6 @@ void winch_hook() {
 	ioctl(fileno(stdin), TIOCGWINSZ, &ws);
 	rows = ws.ws_row;
 	cols = ws.ws_col;
-	clear();
 	resizeterm(rows, cols);
 	refresh();
 	wborder(chatbox_border, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
@@ -69,6 +68,7 @@ void winch_hook() {
 	wresize(chatbox_border, rows-CHATBOX_BOTTOM_SPAN, cols-CHATBOX_BOTTOM_SPAN);
 	box(chatbox_border, 0, 0);
 	wresize(chatbox, rows-CHATBOX_BOTTOM_SPAN-2, cols-CHATBOX_BOTTOM_SPAN-2);
+	wclear(chatbox);
 	wrefresh(chatbox);
 	wrefresh(chatbox_border);
 	display_lines();

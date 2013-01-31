@@ -57,7 +57,7 @@ int receive_message(const int msgtype, ...) {
     }
 	else if (msgtype == MESSAGE) {
 		Msg_chat_message * msg = va_arg(vl, Msg_chat_message *);
-		i = msgrcv(own_id, msg, sizeof(Msg_chat_message) - sizeof(long), msgtype, IPC_NOWAIT) != FAIL;
+		i = msgrcv(own_id, msg, sizeof(Msg_chat_message) - sizeof(long), msgtype, IPC_NOWAIT);
 	}
 	else if (msgtype == USERS || msgtype == ROOMS || msgtype == ROOM_USERS) {
 		Msg_request_response * msg = va_arg(vl, Msg_request_response *);
