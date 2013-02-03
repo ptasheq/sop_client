@@ -20,15 +20,23 @@
 #define wants_users_list(str) !strcmp(str, "[users]")
 #define wants_rooms_list(str) !strcmp(str, "[rooms]")
 #define wants_room_users_list(str) !strcmp(str, "[roomusers]")
+#define is_polish(ch) (ch == -59) || (ch == -60) || (ch == -61) 
 
-extern char ** lines; 
+typedef struct {
+	char * str;
+	char bold_flag;
+} Lines;
+
+extern Lines * lines; 
 extern unsigned short int signal_handled;
 
 short readstr(char *, int);
+short readstr2(char *, int);
 void writestr(char *);
 void readint(int *);
 int power(int, int);
+short add_char_in_text(short, char *, short, short, short);
 void add_line(char *);
+void delete_lines();
 void display_lines();
-
 #endif

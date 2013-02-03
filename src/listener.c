@@ -34,10 +34,7 @@ void listener_loop() {
 				Msg_chat_message mcm_data;
 				int await_message[ROOM_USERS + 1] = {NOAWAIT};
 				int buf, i;
-				FILE * fp = fopen("plik.txt", "w+");
 				char received=1;
-				char str[10];
-				time_t t = time(NULL); /* for checking timeout */
 				strcpy(heartbeat.user_name, username);
 				while (is_logged()) {
 					i = 0;
@@ -47,13 +44,11 @@ void listener_loop() {
 					}
 					if (receive_message(RESPONSE, &response_data) != FAIL) {
 						if (response_data.response_type == PING) {
-							t = time(NULL);
 							send_message(heartbeat.type, &heartbeat);
 						}
 						else if (await_message[RESPONSE]) {
 							pipewrite(Pdesc[1], Pdesc2[0], &response_data.response_type, sizeof(int));
 							pipewrite(Pdesc[1], Pdesc2[0], response_data.content, strlen(response_data.content));
-							fprintf(fp, "msg: %d\n", response_data.response_type);
 							await_message[RESPONSE] = NOAWAIT;
 						}
 					}
@@ -61,23 +56,20 @@ void listener_loop() {
 						pipe_msg(getppid(), &mcm_data);
 					}
 					if (await_message[USERS] && receive_message(USERS, &mrr_data) != FAIL) {
-						while (i < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER && mrr_data.content[i][0]) {
-							pipewrite(Pdesc[1], Pdesc2[0], mrr_data.content[i], USER_NAME_MAX_LENGTH);
+						while (i < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER) {
+							if (mrr_data.content[i][0])
+								pipewrite(Pdesc[1], Pdesc2[0], mrr_data.content[i], USER_NAME_MAX_LENGTH);
 							i++;
 						}
 						await_message[USERS] = NOAWAIT;
 					}
 					else if (await_message[ROOMS] && receive_message(ROOMS, &mrr_data) != FAIL) {
-						while (i < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER && mrr_data.content[i][0]) {
-							pipewrite(Pdesc[1], Pdesc2[0], mrr_data.content[i], ROOM_NAME_MAX_LENGTH);
+						while (i < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER) {
+							if (mrr_data.content[i][0])
+								pipewrite(Pdesc[1], Pdesc2[0], mrr_data.content[i], ROOM_NAME_MAX_LENGTH);
 							i++;
                         }
 						await_message[ROOMS] = NOAWAIT;
-					}
-					if (time(NULL) - t >= TIMEOUT) { /*server is not responding */
-						t = time(NULL);
-						kill(getppid(), SIGTIMEOUT);
-						break;
 					}
 					msleep(WAIT_TIME);
 				}
@@ -107,7 +99,6 @@ void listener_end() {
 void change_login_state() {
 	set_signal(SIGLOG, change_login_state);
 	if (!logged) {
-		int i = 0;
 		if (piperead(Pdesc[1], Pdesc2[0], &serv_id, sizeof(int)) == FAIL)
 			return;
 		if (piperead(Pdesc[1], Pdesc2[0], &own_id, sizeof(int)) == FAIL)

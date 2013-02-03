@@ -231,8 +231,14 @@ void get_time(char * str) { /* all numbers are set because of result of ctime (c
 
 void display_request_result() { 
 	int i = 0;
-	while (i < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER && request_response_data->content[i][0]) {
-		writestr(request_response_data->content[i]);
+	if (request_data->request_type == USERS_LIST)
+		writestr("Users:");
+	else 
+		writestr("Rooms:");
+	while (i < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER) {
+		if (request_response_data->content[i][0]){
+			writestr(request_response_data->content[i]);
+		}
 		++i;
 	}
 }
@@ -272,9 +278,6 @@ void print_msg(int flag) {
 	char buf[USER_NAME_MAX_LENGTH + 10], private;
 	if (flag) {
 		char buf2[STR_BUF_SIZE];
-		if (!signal_handled) {
-			signal_handled++;
-		}
 		piperead(Pdesc2[1], Pdesc[0], &private, sizeof(char));
 		piperead(Pdesc2[1], Pdesc[0], buf, USER_NAME_MAX_LENGTH + 10);
 		piperead(Pdesc2[1], Pdesc[0], buf2, STR_BUF_SIZE);
@@ -308,7 +311,7 @@ short piperead(int pipedest, int pipesrc, void * dest, short length) {
 short pipewrite(int pipedest, int pipesrc, const void * src, short length) {
 	char received = 5;
 	short i = 0;
-	int x = write(pipedest, src, length);
+	write(pipedest, src, length);
 	while (read(pipesrc, &received, sizeof(char)) == FAIL && i < MAX_FAILS) {
 		++i;
 		msleep(WAIT_TIME);

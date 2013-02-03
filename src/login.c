@@ -25,7 +25,7 @@ void login() {
 		
 		writestr("Please choose client address(queue number):");
 		readint(&own_num);
-		while (own_num == FAIL || (own_id = msgget(own_num, IPC_CREAT | 0666)) == FAIL || own_id == serv_id) {
+		while (own_num == FAIL || (own_id = msgget(own_num, IPC_CREAT | IPC_EXCL | 0666)) == FAIL || own_id == serv_id) {
 			writestr("Please enter correct address(different from server):");
 			readint(&own_num);
 		}
@@ -68,8 +68,8 @@ void login() {
 
 void logout(int flag) {
 	if (flag) { /* Serves as signal handle */
-		if (!signal_handled)
-			signal_handled++; 
+		/*if (!signal_handled)
+			signal_handled++;*/
 		logged = 0;
 		kill(ch_pid, SIGLOG);
 		writestr("Connection lost. Logout.");

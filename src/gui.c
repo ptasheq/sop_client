@@ -39,6 +39,7 @@ void gfx_init() {
 	setlocale(LC_CTYPE, "pl_PL.utf8");
 	initscr();
 	init_colors();
+	noecho();
 	getmaxyx(stdscr, rows, cols);
 	if (rows < 0 || cols < 0) {
 		endwin();
@@ -54,6 +55,7 @@ void gfx_free() {
 	delwin(chatbox);
 	delwin(chatbox_border);
 	endwin();
+	delete_lines();
 }
 
 void winch_hook() {
